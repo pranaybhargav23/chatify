@@ -6,6 +6,7 @@ import messageRoutes from './routes/message.route.js';
 import { connectDB } from './lib/db.js';
 import { ENV } from './lib/env.js';
 
+import cors from 'cors';
 
 const app = express();
 
@@ -13,6 +14,12 @@ const PORT = ENV.PORT || 3000;
 
 
 app.use(express.json());
+app.use(cors({
+    origin: ENV.NODE_ENV === 'development' 
+        ? ['http://localhost:5173', 'http://localhost:5174'] 
+        : ENV.CLIENT_URL, 
+    credentials: true
+}));
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
