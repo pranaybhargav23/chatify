@@ -3,6 +3,7 @@ import { ENV } from "../lib/env.js";
 import { generateToken } from "../lib/utils.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
+import cloudinary from "../lib/cloudinary.js";
 
 export const signup = async (request, response) => {
     const {fullName, email, password} = request.body;
@@ -65,6 +66,9 @@ export const signup = async (request, response) => {
 export const login = async (request, response) => {
     const {email, password} = request.body;
      
+    if(!email || !password){
+        return response.status(400).json({message:'email and password are required'});
+    }
     try{
         const user = await User.findOne({email});
         if(!user){
@@ -99,3 +103,28 @@ export const logout = (_, response) => {
    });
    response.status(200).json({message:'Logged out successfully'});
 };
+
+
+export const updateProfile = async (request, response) => {
+   try{
+    const {profilePic} = request.body;
+     if(!profilePic){
+        return response.status(400).json({message:'Profile picture is required'});
+     }
+     const userId = request.user._id;
+
+     const uploadResponse = await cloudinary.uploader.upload(profilePic);
+
+     const updatedUser = await User.findByIdAndUpdate(userId,{
+        profilePic:uploadResponse.secure_url,
+     },{ new:true});
+
+        response.status(200).json(updatedUser);
+
+    }catch(err){
+        console.error(err);
+        response.status(500).json({message:'Server Error'});
+    }
+};
+
+
