@@ -62,9 +62,40 @@ export const signup = async (request, response) => {
    
 };
 
-export const login = (req, res) => {
-    res.send('Login API');
+export const login = async (request, response) => {
+    const {email, password} = request.body;
+     
+    try{
+        const user = await User.findOne({email});
+        if(!user){
+            return response.status(400).json({message:'user not found'});
+        }
+        const isPasswordCorrect = await bcrypt.compare(password,user.password);
+        
+        if(!isPasswordCorrect){
+            return response.status(400).json({message:'Invalid crendentials'});
+        }
+        generateToken(user._id,response);
+
+        response.status(200).json({
+            _id:user._id,
+            fullName:user.fullName,
+            email:user.email,
+            profilePic:user.profilePic,
+        });
+
+    }catch(err){
+        console.error(err);
+        response.status(500).json({message:'Server Error'});
+    }
+   
+        
+  
 };
-export const logout = (req, res) => {
-    res.send('Logout API');
+
+export const logout = (_, response) => {
+   response.cookie('jwt','',{
+        maxAge:0,
+   });
+   response.status(200).json({message:'Logged out successfully'});
 };
