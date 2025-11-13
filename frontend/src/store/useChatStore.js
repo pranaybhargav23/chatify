@@ -3,7 +3,6 @@ import { axiosInstance } from '../lib/axios';
 import toast from 'react-hot-toast';
 import { useAuthStore } from './useAuthStore';
 
-const notificationSound = new Audio('/sounds/notification.mp3');
 
 export const useChatStore = create((set,get) => ({
     allContacts: [],
@@ -73,7 +72,7 @@ export const useChatStore = create((set,get) => ({
 
         const optimisticMessage = {
             _id: tempId,
-            senderId: authUser._id,
+            senderId: authUser.user._id,
             receiverId: selectedUser._id,
             text: messageData.text || null,
             image: messageData.image || null,
@@ -86,11 +85,18 @@ export const useChatStore = create((set,get) => ({
         set({messages: [...messages, optimisticMessage]});
         try {
             const response = await axiosInstance.post(`/messages/send/${selectedUser._id}`,messageData);
-            set({messages: messages.concat(response.data)});
+            // Replace the optimistic message with the server response
+            const currentMessages = get().messages; // Get current state
+            const updatedMessages = currentMessages.map(msg => 
+                msg._id === tempId ? response.data : msg
+            );
+            set({messages: updatedMessages});
             
         } catch (error) {
             //remove the optimistic message on failure
-            set({messages:messages});
+            const currentMessages = get().messages; // Get current state
+            const filteredMessages = currentMessages.filter(msg => msg._id !== tempId);
+            set({messages: filteredMessages});
             toast.error(error.response?.data?.message || "Failed to send message. Please try again.");
         }
     },
@@ -102,11 +108,20 @@ export const useChatStore = create((set,get) => ({
         const socket = useAuthStore.getState().socket;
 
         socket.on("newMessage", (newMessage) => {
+            const {authUser} = useAuthStore.getState();
+            const isMessageFromSelectedUser = newMessage.senderId === selectedUser._id;
+            const isMyOwnMessage = newMessage.senderId === authUser.user._id;
+            
+            // Only add messages from the selected user (not our own messages)
+            if(!isMessageFromSelectedUser || isMyOwnMessage) return;
+
             const currentMesages = get().messages;
 
             set({messages: [...currentMesages, newMessage]})
         
             if(isSoundEnabled){
+                const notificationSound = new Audio('/sounds/notification.mp3');
+
                 notificationSound.currentTime = 0;
                 notificationSound.play().catch((e)=>console.log("Audio play failed:",e));
             }
