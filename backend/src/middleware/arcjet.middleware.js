@@ -6,11 +6,11 @@ export const arcjetProtection = async (request, response, next) => {
         const decision = await aj.protect(request); 
         
         // Log for debugging
-        console.log(`Arcjet decision for ${request.method} ${request.path}:`, {
-            isDenied: decision.isDenied(),
-            reason: decision.reason,
-            ip: request.ip || request.connection.remoteAddress
-        });
+        // console.log(`Arcjet decision for ${request.method} ${request.path}:`, {
+        //     isDenied: decision.isDenied(),
+        //     reason: decision.reason,
+        //     ip: request.ip || request.connection.remoteAddress
+        // });
 
         if(decision.isDenied()){
             if(decision.reason.isRateLimit()){

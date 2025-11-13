@@ -23,7 +23,7 @@ const aj = arcjet({
     // Rate limiting for authentication endpoints
     slidingWindow({
         mode: "LIVE",
-        max: 5, // Allow 10 requests per window
+        max: 100, // Allow 10 requests per window
         interval: "1m", // 1 minute window
    })
   ],
