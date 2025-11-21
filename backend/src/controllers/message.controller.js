@@ -75,14 +75,7 @@ export const sendMessage = async (request, response) => {
         response.status(201).json(newMessage);
 
     } catch (err) {
-        console.error(err);
-        response.status(500).json({ message: 'Server Error' });
-    }
-}
-
-export const getChatPartners = async (request, response) => {
-    try {
-        const loggedInUserId = request.user._id;
+st loggedInUserId = request.user._id;
 
         //find all the messages where loggedInUserId is either sender or receiver
         const messages = await Message.find({

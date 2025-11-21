@@ -68,6 +68,12 @@ export const useChatStore = create((set,get) => ({
         const {selectedUser, messages} = get();
         const {authUser} = useAuthStore.getState();
 
+        console.log('🚀 Sending message...');
+        console.log('📨 Message data:', messageData);
+        console.log('👤 Auth user:', authUser);
+        console.log('🎯 Selected user:', selectedUser);
+        console.log('📋 Current messages count:', messages.length);
+
         const tempId = `temp-${Date.now()}`;
 
         const optimisticMessage = {
@@ -81,20 +87,30 @@ export const useChatStore = create((set,get) => ({
             isOptimistic: true,
 
         };
+        console.log('⚡ Optimistic message:', optimisticMessage);
+        
         //immediately add the message to UI
         set({messages: [...messages, optimisticMessage]});
+        console.log('✅ Added optimistic message, new count:', messages.length + 1);
+        
         try {
             const response = await axiosInstance.post(`/messages/send/${selectedUser._id}`,messageData);
+            console.log('📡 Server response:', response.data);
+            
             // Replace the optimistic message with the server response
-            const currentMessages = get().messages; // Get current state
+            const currentMessages = get().messages;
+            console.log('📊 Current messages before replacement:', currentMessages.length);
+            
             const updatedMessages = currentMessages.map(msg => 
                 msg._id === tempId ? response.data : msg
             );
+            console.log('🔄 Updated messages after replacement:', updatedMessages.length);
             set({messages: updatedMessages});
             
         } catch (error) {
+            console.error('❌ Send message error:', error);
             //remove the optimistic message on failure
-            const currentMessages = get().messages; // Get current state
+            const currentMessages = get().messages;
             const filteredMessages = currentMessages.filter(msg => msg._id !== tempId);
             set({messages: filteredMessages});
             toast.error(error.response?.data?.message || "Failed to send message. Please try again.");
@@ -135,7 +151,4 @@ export const useChatStore = create((set,get) => ({
 
 
    
-
-
-
 }));
