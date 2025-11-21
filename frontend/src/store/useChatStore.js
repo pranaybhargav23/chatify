@@ -32,7 +32,10 @@ export const useChatStore = create((set,get) => ({
             set({allContacts:response.data});
 
         }catch(err){
-           toast.error(err.response?.data?.message || "Failed to load contacts. Please try again.");
+           // Don't show error toast for 401 (user not authenticated)
+           if (err.response?.status !== 401) {
+               toast.error(err.response?.data?.message || "Failed to load contacts. Please try again.");
+           }
         }finally{
             set({isUsersLoading:false});
         }
@@ -45,7 +48,10 @@ export const useChatStore = create((set,get) => ({
             set({chats:response.data});
 
         }catch(err){
-              toast.error(err.response?.data?.message || "Failed to load chats. Please try again.");
+              // Don't show error toast for 401 (user not authenticated)
+              if (err.response?.status !== 401) {
+                  toast.error(err.response?.data?.message || "Failed to load chats. Please try again.");
+              }
         }finally{
             set({isChatsLoading:false});
         }
@@ -58,7 +64,10 @@ export const useChatStore = create((set,get) => ({
             const response = await axiosInstance.get(`/messages/${userId}`);
             set({messages:response.data});
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to load messages. Please try again.");
+            // Don't show error toast for 401 (user not authenticated)
+            if (error.response?.status !== 401) {
+                toast.error(error.response?.data?.message || "Failed to load messages. Please try again.");
+            }
         }finally{
             set({isMessagesLoading:false});
         }
@@ -147,6 +156,19 @@ export const useChatStore = create((set,get) => ({
     unsubcribeFromMessages: () => { 
         const socket = useAuthStore.getState().socket;
         socket.off("newMessage");
+    },
+
+    // Clear all chat data on logout
+    clearChatData: () => {
+        set({
+            allContacts: [],
+            chats: [],
+            messages: [],
+            selectedUser: null,
+            isUsersLoading: false,
+            isChatsLoading: false,
+            isMessagesLoading: false
+        });
     }
 
 

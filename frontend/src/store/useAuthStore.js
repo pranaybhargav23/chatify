@@ -64,13 +64,31 @@ export const useAuthStore = create((set, get) => ({
 
    logout: async() =>{
     try{
-        await axiosInstance.post('/auth/logout');
+        // Clear auth user first to prevent further API calls
         set({authUser:null});
-        toast.success("Logged out successfully!");
+        
+        // Disconnect socket immediately
         get().disconnectSocket();
+        
+        // Clear chat data to prevent stale state
+        try {
+            const { useChatStore } = await import('./useChatStore');
+            useChatStore.getState().clearChatData();
+        } catch (e) {
+            // Ignore if chat store not available
+        }
+        
+        // Make logout API call (this might fail but that's okay)
+        await axiosInstance.post('/auth/logout');
+        toast.success("Logged out successfully!");
     }catch(err){
-        toast.error(err.response?.data?.message || "Logout failed. Please try again.");
-
+        // Only show error if it's not a 401 (expected after clearing auth)
+        if (err.response?.status !== 401) {
+            toast.error(err.response?.data?.message || "Logout failed. Please try again.");
+        } else {
+            // Still show success even if logout API fails due to missing token
+            toast.success("Logged out successfully!");
+        }
    }
 },
 
