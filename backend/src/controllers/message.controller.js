@@ -6,7 +6,7 @@ import { getReceiverSocketId, io } from "../lib/socket.js";
 export const getAllContacts = async (request, response) => {
     try {
         const loggedInUserId = request.user._id;
-        const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select('-pasword');
+        const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select('-password');
         response.status(200).json(filteredUsers);
     } catch (err) {
         console.error(err);
@@ -75,7 +75,14 @@ export const sendMessage = async (request, response) => {
         response.status(201).json(newMessage);
 
     } catch (err) {
-st loggedInUserId = request.user._id;
+        console.error(err);
+        response.status(500).json({ message: 'Server Error' });
+    }
+}
+
+export const getChatPartners = async (request, response) => {
+    try {
+        const loggedInUserId = request.user._id;
 
         //find all the messages where loggedInUserId is either sender or receiver
         const messages = await Message.find({
@@ -89,9 +96,11 @@ st loggedInUserId = request.user._id;
             ...new Set(messages.map(msg =>
                 msg.senderId.toString() === loggedInUserId.toString() ? msg.receiverId.toString() : msg.senderId.toString()
             ))
-        ]
+        ].filter(id => id !== loggedInUserId.toString()); // Filter out self
 
-        const chatPartners = await User.find({ _id: { $in: chatPartnerIds } }).select('-password');
+        const chatPartners = await User.find({ 
+            _id: { $in: chatPartnerIds, $ne: loggedInUserId } 
+        }).select('-password');
 
         response.status(200).json(chatPartners);
 
